@@ -1041,7 +1041,8 @@ class YoutubeDL(object):
 
         for i, entry in enumerate(entries, 1):
             self.to_screen('[download] Downloading video %s of %s' % (i, n_entries))
-            Process=subprocess.Popen('progressBar %s %s' % (str(i),str(n_entries),), shell=True)
+            Process=subprocess.Popen('progressBar %s %s' % (str(i-1),str(n_entries),), shell=True)
+            Process=subprocess.Popen('echo "%s" > posfile; echo "%s" >> posfile' % (str(i-1),str(n_entries),), shell=True)
             # This __x_forwarded_for_ip thing is a bit ugly but requires
             # minimal changes
             if x_forwarded_for:
