@@ -247,7 +247,7 @@ class FileDownloader(object):
         self.to_console_title('youtube-dl ' + msg)
 
     def report_progress(self, s):
-        Process=Popen('pos=`awk "NR==1 {print; exit}" posfile`; total=`awk "NR==2 {print; exit}" posfile`; curr="%s"; final="%s"; progressBar `bc -l <<< "frac=($curr/$final+$pos)*10000; scale=0; frac/1"` $((total*10000))' % (str(s.get('downloaded_bytes')),str(s.get('total_bytes')),), shell=True)
+        Process=Popen('pos=`awk "NR==1 {print; exit}" posfile`; total=`awk "NR==2 {print; exit}" posfile`; curr="%s"; final="%s"; progressBar `echo "frac=($curr/$final+$pos)*10000; scale=0; frac/1" | bc -l` $((total*10000))' % (str(s.get('downloaded_bytes')),str(s.get('total_bytes')),), shell=True)
         
         if s['status'] == 'finished':
             if self.params.get('noprogress', False):
