@@ -1,0 +1,140 @@
+#!/bin/bash
+#set -e
+
+link=$1
+
+dir=$(pwd)
+cd ../bin 
+binpath=$(pwd)
+export PATH="$PATH:$binpath"
+
+cd "$dir"
+
+#export ptitle=`echo $name | cut -d'.' -f2 | sed -e 's/\r/|/g' | cut -d'|' -f 2`
+#echo -n "$ptitle \n\n
+name=$(youtube-dl --yes-playlist --playlist-items 1 -o "%(playlist_title)s" --get-filename "$link")
+rm posfile
+ptitle="${name##*$'\r'}"
+
+
+mkdir "$ptitle"
+cd "$ptitle"
+
+
+echo "Downloading Audio"
+youtube-dl -f "bestaudio/best" -ciw -o "%(title)s.%(ext)s" --extract-audio --audio-format m4a --q --audio-quality 0 --yes-playlist --write-thumbnail --add-metadata $link
+#echo "finished downloading"
+echo -ne "\n"
+
+#rename posible weird output
+for f in *; do mv -n -- "$f" "${f##* - NA - }"; done
+echo "Renaming weird outputs" 
+progressBar 1 7
+#alternatively,  rename 's/^.*NA\ - //' *
+rename 's/[(][^)]*[)]//g' *
+progressBar 2 7
+rename 's/\[[^][]*\]//g' *
+progressBar 3 7
+#rename 's/ +\././' *
+rename 's/ +\.aiff/.aiff/' *
+progressBar 4 7
+rename 's/ +\.jpg/.jpg/' *
+progressBar 5 7
+rename 's/ +\.m4a/.m4a/' *
+progressBar 6 7
+rename 's/ +\.webp/.webp/' *
+progressBar 7 7
+echo -ne "\n"
+
+#Crop the album art to be square
+ctpic=1
+totalpic=$(ls | grep -e ".webp" -e ".jpg" | wc -l)
+#echo -ne "\n\n$ct, $total\n\n"
+echo "Cropping images"
+
+if [[ "$(ls)" == *".jpg"* ]]; then
+    for a in *.jpg
+    do
+        ffmpeg -i "$a" -loglevel error -y -an -q 0 -vf scale="'if(gt(iw,ih),-1,720):if(gt(iw,ih),720,-1)', crop=720:720:exact=1" "tmp_$a"
+        #echo "cropped $a to tmp_$a"
+        mv "tmp_$a" "$a"
+        #echo "moved tmp_$a to $a"
+        progressBar $ctpic $totalpic
+        ctpic=$(($ctpic + 1))
+    done
+fi
+
+for a in *.webp
+do
+    b=${a%.webp}.jpg
+    #echo "expected name: $b"
+        ffmpeg -i "$a" -loglevel error -y -an -q 0 -vf scale="'if(gt(iw,ih),-1,720):if(gt(iw,ih),720,-1)', crop=720:720:exact=1" "tmp_$b"
+    #echo "cropped $a to tmp_$b"
+    mv "tmp_$b" "$b"
+    #echo "moved tmp_$b to $b"
+    progressBar $ctpic $totalpic
+    ctpic=$(($ctpic + 1))
+done
+
+
+echo -ne "\n"
+rm *.webp
+
+
+#Fix 8 digit yyyymmdd to 4 digit yyyy
+echo "Fixing Date"
+ctdate=1
+totaldate=$(ls | grep ".m4a" | wc -l)
+for a in *.m4a
+do
+    date=$(mediainfo "$a" | grep "Recorded date" | tr -dc '0-9')
+    if [ "$date" == "" ]
+    then
+        #echo "$a has no date"
+        continue
+    fi
+    if [ ${#date} == 4 ]
+    then
+        #echo "$a has correctly formatted date"
+        continue
+    fi
+
+    #echo "Date: $date"
+    cdate=$(mediainfo "$a" | grep "Recorded date" | tr -dc '0-9' | cut -c1-4)
+    #echo "Correct Date: $cdate"
+
+    AtomicParsley "$a" --year "$cdate" --overWrite | grep -q "string"
+    progressBar $ctdate $totaldate
+    ctdate=$(($ctdate + 1))
+done
+echo -ne "\n"
+
+
+#embed the artwork
+echo "Embeding Artwork"
+ctart=1
+totalart=$(ls | grep -e ".jpg" | wc -l)
+for a in *.m4a
+do
+    if [ ! -f "${a%.m4a}.jpg" ]
+    then
+        echo "${a%.m4a}.jpg does not exist"
+        continue
+    fi
+    AtomicParsley "$a" --artwork "${a%.m4a}.jpg" --overWrite | grep -q "string"
+    #echo "embedded ${a%.m4a}.jpg into $a"
+    progressBar $ctart $totalart
+    ctart=$(($ctart + 1))
+done
+echo -ne "\n"
+
+sleep 5
+rm *.jpg
+rm posfile
+
+echo ""
+echo "finished"
+
+
+
+
