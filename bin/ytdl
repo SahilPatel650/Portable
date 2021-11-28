@@ -3,6 +3,9 @@
 
 link=$1
 
+#EXCLUSIVE TO SAHILS MAC ONLY
+cd "/Users/Sahil/Music/download"
+
 dir=$(pwd)
 cd ../bin 
 binpath=$(pwd)
