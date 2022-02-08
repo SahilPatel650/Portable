@@ -1,0 +1,39 @@
+#!/bin/bash
+: > curr
+: > curr2
+: > imp
+: > delete
+: > add
+
+a="`pwd`"
+dir=$(basename "$PWD")
+
+cd "/Users/Sahil/Music/Music/"
+find /Users/Sahil/Music/Music -type f -regex ".*\.m4a" > "$a"/curr
+
+
+sed 's@.*/@@' "$a"/curr > "$a"/curr2
+#cat /tmp/music/curr2
+cd "$a"
+find . -type f -regex ".*\.m4a" | sed "s|^\./||" > imp
+#cat /tmp/music/imp
+
+comm -12 <(sort curr2) <(sort imp) > delete
+
+grep -Fw -f imp curr > add
+
+while IFS="" read -r p || [ -n "$p" ]
+do
+	echo "about to delete $p"
+	rm "$p"
+done < delete
+
+cd "/Users/Sahil/Music/playlists/"
+: > "$dir.m3u"
+echo "#EXTM3U" > "$dir".m3u
+
+while IFS="" read -r p || [ -n "$p" ]
+do
+	echo "$p" >> "$dir".m3u
+done < "$a"/add
+
