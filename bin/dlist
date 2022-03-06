@@ -35,5 +35,8 @@ echo "#EXTM3U" > "$dir".m3u
 while IFS="" read -r p || [ -n "$p" ]
 do
 	echo "$p" >> "$dir".m3u
+	echo "adding $p to playlist"
 done < "$a"/add
 
+cd "$a"
+rm curr curr2 imp delete add
