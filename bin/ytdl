@@ -24,7 +24,7 @@ cd "$ptitle"
 
 
 echo "Downloading Audio"
-yt-dlp -f "bestaudio[ext=m4a]" -ciw -o "%(title)s.%(ext)s" --extract-audio --audio-format m4a --q --yes-playlist --write-thumbnail --add-metadata --no-check-certificate $link
+yt-dlp -f "bestaudio[ext=m4a]" -ciw -o "%(title)s.%(ext)s" --extract-audio --audio-format m4a --q --yes-playlist --write-thumbnail --add-metadata $link
 #echo "finished downloading"
 echo -ne "\n"
 
