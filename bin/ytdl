@@ -1,23 +1,14 @@
 #!/bin/bash
 #set -e
 
-link=$1
+link="$1"
 
 #EXCLUSIVE TO SAHILS MAC ONLY
 cd "/Users/Sahil/Music/download"
 
-#dir=$(pwd)
-#cd ../bin 
-#binpath=$(pwd)
-#export PATH="$PATH:$binpath"
-#cd "$dir"
-
-#export ptitle=`echo $name | cut -d'.' -f2 | sed -e 's/\r/|/g' | cut -d'|' -f 2`
-#echo -n "$ptitle \n\n
-name=$(yt-dlp --yes-playlist --playlist-items 1 -o "%(playlist_title)s" --get-filename --no-check-certificate "$link")
+name=$(yt-dlp --yes-playlist --playlist-items 1 -o "%(playlist_title)s" --get-filename "$link")
 rm posfile
 ptitle="${name##*$'\r'}"
-
 
 mkdir "$ptitle"
 cd "$ptitle"
