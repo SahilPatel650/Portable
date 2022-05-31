@@ -1,22 +1,37 @@
 #!/bin/bash
-#set -e
+
+#declare functions
+rmposfile() {
+    if [ "$ptitle" != "NA" ]
+    then
+        rm posfile
+    fi
+}
+
+progComplete() {
+    if [ "$ptitle" == "NA" ]
+    then
+        progressBar 1 1
+    fi
+}
 
 link="$1"
 
 #EXCLUSIVE TO SAHILS MAC ONLY
 cd "/Users/Sahil/Music/download"
 
+echo "Getting information..."
 name=$(yt-dlp --yes-playlist --playlist-items 1 -o "%(playlist_title)s" --get-filename "$link")
-rm posfile
 ptitle="${name##*$'\r'}"
 
-mkdir "$ptitle"
+mkdir -p "$ptitle"
+rmposfile
 cd "$ptitle"
 
 
 echo "Downloading Audio"
-yt-dlp -f "bestaudio[ext=m4a]" -ciw -o "%(title)s.%(ext)s" --extract-audio --audio-format m4a --q --yes-playlist --write-thumbnail --add-metadata $link
-#echo "finished downloading"
+yt-dlp -f "bestaudio[ext=m4a]" -ciw -o "%(title)s.%(ext)s" --extract-audio --audio-format m4a --q --yes-playlist --write-thumbnail --add-metadata "$link"
+#progComplete
 echo -ne "\n"
 
 #rename posible weird output
@@ -100,6 +115,7 @@ do
     progressBar $ctdate $totaldate
     ctdate=$(($ctdate + 1))
 done
+progComplete
 echo -ne "\n"
 
 
@@ -109,9 +125,9 @@ ctart=1
 totalart=$(ls | grep -e ".jpg" | wc -l)
 for a in *.m4a
 do
-    if [ ! -f "${a%.m4a}.jpg" ]
+    if [ ! -f "${a%.m4a}.jpg" ] 
     then
-        echo "${a%.m4a}.jpg does not exist"
+        #echo "${a%.m4a}.jpg does not exist"
         continue
     fi
     AtomicParsley "$a" --artwork "${a%.m4a}.jpg" --overWrite | grep -q "string"
@@ -119,14 +135,17 @@ do
     progressBar $ctart $totalart
     ctart=$(($ctart + 1))
 done
+
+
 echo -ne "\n"
 
-sleep 5
+sleep 3
 rm *.jpg
-rm posfile
+rmposfile
 
 echo ""
 echo "finished"
+
 
 
 
