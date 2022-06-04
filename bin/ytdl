@@ -34,25 +34,25 @@ yt-dlp -f "bestaudio[ext=m4a]" -ciw -o "%(title)s.%(ext)s" --extract-audio --aud
 #progComplete
 echo -ne "\n"
 
-#rename posible weird output
-for f in *; do mv -n -- "$f" "${f##* - NA - }"; done
-echo "Renaming weird outputs" 
-progressBar 1 7
-#alternatively,  rename 's/^.*NA\ - //' *
-rename 's/[(][^)]*[)]//g' *
-progressBar 2 7
-rename 's/\[[^][]*\]//g' *
-progressBar 3 7
-#rename 's/ +\././' *
-rename 's/ +\.aiff/.aiff/' *
-progressBar 4 7
-rename 's/ +\.jpg/.jpg/' *
-progressBar 5 7
-rename 's/ +\.m4a/.m4a/' *
-progressBar 6 7
-rename 's/ +\.webp/.webp/' *
-progressBar 7 7
-echo -ne "\n"
+# #rename posible weird output
+# for f in *; do mv -n -- "$f" "${f##* - NA - }"; done
+# echo "Renaming weird outputs" 
+# progressBar 1 7
+# #alternatively,  rename 's/^.*NA\ - //' *
+# rename 's/[(][^)]*[)]//g' *
+# progressBar 2 7
+# rename 's/\[[^][]*\]//g' *
+# progressBar 3 7
+# #rename 's/ +\././' *
+# rename 's/ +\.aiff/.aiff/' *
+# progressBar 4 7
+# rename 's/ +\.jpg/.jpg/' *
+# progressBar 5 7
+# rename 's/ +\.m4a/.m4a/' *
+# progressBar 6 7
+# rename 's/ +\.webp/.webp/' *
+# progressBar 7 7
+# echo -ne "\n"
 
 #Crop the album art to be square
 ctpic=1
