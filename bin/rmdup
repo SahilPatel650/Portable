@@ -1,0 +1,38 @@
+#!/bin/bash
+
+: > fullpaths
+: > filenames
+: > playlistItems
+
+
+dir="$PWD"
+pname="$(basename "$PWD")"
+pfile="$(echo "$PWD" | cut -d'/' -f-4)/playlists/$pname.m3u"
+echo "#EXTM3U" > "$pfile"
+
+ls > playlistItems
+
+find /Users/Sahil/Music/Music -type f -regex ".*\.m4a" > "$dir"/fullpaths
+find /Users/Sahil/Music/Music -type f -regex ".*\.mp3" >> "$dir"/fullpaths
+
+while IFS="" read -r p || [ -n "$p" ]
+do
+    libItem="$(basename "$p")"
+    while read songExt
+    do
+        song="${songExt%.*}"
+        #echo "$song .... $p"
+
+        if [[ "$libItem" ==  *"$song"* ]]
+        then
+            #echo "$songExt and $p are a match"
+            echo "$p" >> "$pfile"
+            echo "removing $songExt"
+            rm "$songExt"
+        fi
+    done < playlistItems
+done < fullpaths
+
+rm fullpaths filenames playlistItems
+
+open "$(echo "$dir" | cut -d'/' -f-4)/playlists"
