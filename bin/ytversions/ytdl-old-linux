@@ -1,58 +1,52 @@
 #!/bin/bash
+#set -e
 
-#declare functions
-rmposfile() {
-    if [ "$ptitle" != "NA" ]
-    then
-        rm posfile
-    fi
-}
-
-progComplete() {
-    if [ "$ptitle" == "NA" ]
-    then
-        progressBar 1 1
-    fi
-}
-
-link="$1"
+link=$1
 
 #EXCLUSIVE TO SAHILS MAC ONLY
 cd "/home/sahil/Music"
 
-echo "Getting information..."
-name=$(yt-dlp --yes-playlist --playlist-items 1 -o "%(playlist_title)s" --get-filename "$link")
+#dir=$(pwd)
+#cd ../bin 
+#binpath=$(pwd)
+#export PATH="$PATH:$binpath"
+#cd "$dir"
+
+#export ptitle=`echo $name | cut -d'.' -f2 | sed -e 's/\r/|/g' | cut -d'|' -f 2`
+#echo -n "$ptitle \n\n
+name=$(yt-dlp --yes-playlist --playlist-items 1 -o "%(playlist_title)s" --get-filename --no-check-certificate "$link")
+rm posfile
 ptitle="${name##*$'\r'}"
 
-mkdir -p "$ptitle"
-rmposfile
+
+mkdir "$ptitle"
 cd "$ptitle"
 
 
 echo "Downloading Audio"
 yt-dlp -f "bestaudio[ext=m4a]" -ciw -o "%(title)s.%(ext)s" --extract-audio --audio-format m4a --q --yes-playlist --write-thumbnail --add-metadata "$link"
-#progComplete
+#echo "finished downloading"
 echo -ne "\n"
 
-# #rename posible weird output
-# for f in *; do mv -n -- "$f" "${f##* - NA - }"; done
-# echo "Renaming weird outputs" 
-# progressBar 1 7
-# #alternatively,  rename 's/^.*NA\ - //' *
-# rename 's/[(][^)]*[)]//g' *
-# progressBar 2 7
-# rename 's/\[[^][]*\]//g' *
-# progressBar 3 7
-# #rename 's/ +\././' *
-# rename 's/ +\.aiff/.aiff/' *
-# progressBar 4 7
-# rename 's/ +\.jpg/.jpg/' *
-# progressBar 5 7
-# rename 's/ +\.m4a/.m4a/' *
-# progressBar 6 7
-# rename 's/ +\.webp/.webp/' *
-# progressBar 7 7
-# echo -ne "\n"
+#rename posible weird output
+for f in *; do mv -n -- "$f" "${f##* - NA - }"; done
+echo "Renaming weird outputs" 
+progressBar 1 7
+#alternatively,  rename 's/^.*NA\ - //' *
+rename 's/[(][^)]*[)]//g' *
+progressBar 2 7
+rename 's/\[[^][]*\]//g' *
+progressBar 3 7
+#rename 's/ +\././' *
+rename 's/ +\.aiff/.aiff/' *
+progressBar 4 7
+rename 's/ +\.jpg/.jpg/' *
+progressBar 5 7
+rename 's/ +\.m4a/.m4a/' *
+progressBar 6 7
+rename 's/ +\.webp/.webp/' *
+progressBar 7 7
+echo -ne "\n"
 
 #Crop the album art to be square
 ctpic=1
@@ -115,7 +109,6 @@ do
     progressBar $ctdate $totaldate
     ctdate=$(($ctdate + 1))
 done
-progComplete
 echo -ne "\n"
 
 
@@ -125,9 +118,9 @@ ctart=1
 totalart=$(ls | grep -e ".jpg" | wc -l)
 for a in *.m4a
 do
-    if [ ! -f "${a%.m4a}.jpg" ] 
+    if [ ! -f "${a%.m4a}.jpg" ]
     then
-        #echo "${a%.m4a}.jpg does not exist"
+        echo "${a%.m4a}.jpg does not exist"
         continue
     fi
     AtomicParsley "$a" --artwork "${a%.m4a}.jpg" --overWrite | grep -q "string"
@@ -135,17 +128,14 @@ do
     progressBar $ctart $totalart
     ctart=$(($ctart + 1))
 done
-
-
 echo -ne "\n"
 
-sleep 3
+sleep 5
 rm *.jpg
-rmposfile
+rm posfile
 
 echo ""
 echo "finished"
-
 
 
 
