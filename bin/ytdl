@@ -1,4 +1,9 @@
 #!/bin/bash
+link="${@: -1}"
+m4aOptions=( -f "bestaudio[ext=m4a]" -ciw -o "%(title)s.%(ext)s" --extract-audio --audio-format m4a --q --yes-playlist --write-thumbnail --add-metadata )
+
+#####UPDATE THIS- Folder must have 'downloads' and 'playlists' subdirectories###### 
+musicFolder="/Users/Sahil/Music"
 
 #declare functions
 rmposfile() {
@@ -15,139 +20,233 @@ progComplete() {
     fi
 }
 
-link="$1"
 
-#EXCLUSIVE TO SAHILS MAC ONLY
-downloadFolder="/Users/Sahil/Music/download"
-mkdir -p "$downloadFolder"
-cd "$downloadFolder"
+####### Main download workflow #######
+getPlaylistName(){
+    #UPDATE THIS
+    downloadFolder="${musicFolder}/download"
+    mkdir -p "$downloadFolder"
+    cd "$downloadFolder"
 
-echo "Getting information..."
-name=$(yt-dlp --yes-playlist --playlist-items 1 -o "%(playlist_title)s" --get-filename "$link")
-ptitle="${name##*$'\r'}"
+    echo "Getting information..."
+    name=$(yt-dlp --yes-playlist --playlist-items 1 -o "%(playlist_title)s" --get-filename "$link")
+    ptitle="${name##*$'\r'}"
+}
 
-mkdir -p "$ptitle"
-rmposfile
-cd "$ptitle"
+makePlaylistDir(){
+    mkdir -p "$ptitle"
+    rmposfile
+    cd "$ptitle"
+}
 
 
-echo "Downloading Audio"
-yt-dlp -f "bestaudio[ext=m4a]" -ciw -o "%(title)s.%(ext)s" --extract-audio --audio-format m4a --q --yes-playlist --write-thumbnail --add-metadata "$link"
-#add this to put disk order: --parse-metadata "playlist_index:%(track_number)s"
-#progComplete
-echo -ne "\n"
+downloadAudio(){
+    echo "Downloading Audio:"
+    yt-dlp "${m4aOptions[@]}" " $link"
+    #add this to put disk order: --parse-metadata "playlist_index:%(track_number)s"
+    echo -ne "\n"
+}
 
-# #rename posible weird output
-# for f in *; do mv -n -- "$f" "${f##* - NA - }"; done
-# echo "Renaming weird outputs" 
-# progressBar 1 7
-# #alternatively,  rename 's/^.*NA\ - //' *
-# rename 's/[(][^)]*[)]//g' *
-# progressBar 2 7
-# rename 's/\[[^][]*\]//g' *
-# progressBar 3 7
-# #rename 's/ +\././' *
-# rename 's/ +\.aiff/.aiff/' *
-# progressBar 4 7
-# rename 's/ +\.jpg/.jpg/' *
-# progressBar 5 7
-# rename 's/ +\.m4a/.m4a/' *
-# progressBar 6 7
-# rename 's/ +\.webp/.webp/' *
-# progressBar 7 7
-# echo -ne "\n"
+cropArtwork(){
+    #Crop the album art to be square
+    ctpic=1
+    totalpic=$(ls | grep -e ".webp" -e ".jpg" | wc -l)
+    echo "Cropping images"
 
-#Crop the album art to be square
-ctpic=1
-totalpic=$(ls | grep -e ".webp" -e ".jpg" | wc -l)
-#echo -ne "\n\n$ct, $total\n\n"
-echo "Cropping images"
+    if [[ "$(ls)" == *".jpg"* ]]; then
+        for a in *.jpg
+        do
+            ffmpeg -i "$a" -loglevel error -y -an -q 0 -vf scale="'if(gt(iw,ih),-1,720):if(gt(iw,ih),720,-1)', crop=720:720:exact=1" "tmp_$a"
+            mv "tmp_$a" "$a"
+            progressBar $ctpic $totalpic
+            ctpic=$(($ctpic + 1))
+        done
+    fi
 
-if [[ "$(ls)" == *".jpg"* ]]; then
-    for a in *.jpg
+    for a in *.webp
     do
-        ffmpeg -i "$a" -loglevel error -y -an -q 0 -vf scale="'if(gt(iw,ih),-1,720):if(gt(iw,ih),720,-1)', crop=720:720:exact=1" "tmp_$a"
-        #echo "cropped $a to tmp_$a"
-        mv "tmp_$a" "$a"
-        #echo "moved tmp_$a to $a"
+        b=${a%.webp}.jpg
+        #echo "expected name: $b"
+            ffmpeg -i "$a" -loglevel error -y -an -q 0 -vf scale="'if(gt(iw,ih),-1,720):if(gt(iw,ih),720,-1)', crop=720:720:exact=1" "tmp_$b"
+        #echo "cropped $a to tmp_$b"
+        mv "tmp_$b" "$b"
+        #echo "moved tmp_$b to $b"
         progressBar $ctpic $totalpic
         ctpic=$(($ctpic + 1))
     done
+
+    echo -ne "\n"
+    rm *.webp
+}
+fixDate(){
+    #Fix 8 digit yyyymmdd to 4 digit yyyy
+    echo "Fixing Date"
+    ctdate=1
+    totaldate=$(ls | grep ".m4a" | wc -l)
+    for a in *.m4a
+    do
+        date=$(mediainfo "$a" | grep "Recorded date" | tr -dc '0-9')
+        if [ "$date" == "" ]
+        then
+            #echo "$a has no date"
+            continue
+        fi
+        if [ ${#date} == 4 ]
+        then
+            #echo "$a has correctly formatted date"
+            continue
+        fi
+
+        #echo "Date: $date"
+        cdate=$(mediainfo "$a" | grep "Recorded date" | tr -dc '0-9' | cut -c1-4)
+        #echo "Correct Date: $cdate"
+
+        AtomicParsley "$a" --year "$cdate" --overWrite | grep -q "string"
+        progressBar $ctdate $totaldate
+        ctdate=$(($ctdate + 1))
+    done
+    progComplete
+    echo -ne "\n"
+}
+
+embedArtwork(){
+    #embed the artwork
+    echo "Embeding Artwork"
+    ctart=1
+    totalart=$(ls | grep -e ".jpg" | wc -l)
+    for a in *.m4a
+    do
+        if [ ! -f "${a%.m4a}.jpg" ] 
+        then
+            #echo "${a%.m4a}.jpg does not exist"
+            continue
+        fi
+        AtomicParsley "$a" --artwork "${a%.m4a}.jpg" --overWrite | grep -q "string"
+        #echo "embedded ${a%.m4a}.jpg into $a"
+        progressBar $ctart $totalart
+        ctart=$(($ctart + 1))
+    done
+    echo -ne "\n"
+}
+
+cleanup(){
+    sleep 2
+    rm *.jpg
+    rmposfile
+
+    echo ""
+    echo "finished"
+}
+
+####### Main [default] download workflow completed #######
+
+rmDup(){
+    echo "\nRemoving Duplicates"
+    playlistItems="$(ls)"
+    echo playlistItems > logfile
+    pfile="$ptitle.m3u" 
+    echo "#EXTM3U" > "$pfile" 
+
+    fullpaths1="$(find /Users/Sahil/Music/Music -type f -regex ".*\.m4a")"
+    fullpaths2="$(find /Users/Sahil/Music/Music -type f -regex ".*\.mp3")"
+    fullpaths="${fullpaths1}\n${fullpaths2}"
+
+    while IFS="" read -r p || [ -n "$p" ]
+    do
+        libItem="$(basename "$p")"
+        while read songExt
+        do
+            song="${songExt%.*}"
+            #echo "$song .... $p"
+
+            if [[ "$libItem" ==  *"$song"* ]]
+            then
+                #echo "$songExt and $p are a match"
+                echo "$p" >> "$pfile"
+                echo "removing $songExt"
+                rm "$songExt"
+            fi
+        done <<< "$playlistItems"
+    done <<< "$fullpaths"
+    mv "$pfile" "${musicFolder}/playlists"
+}
+
+downloadPlaylist(){
+    getPlaylistName
+    rm posfile
+    cd "${musicFolder}/playlists"
+
+    playlistItems="$(orig-yt-dlp -f "bestaudio[ext=m4a]" -ciw -o "%(title)s.%(ext)s" --get-filename --skip-download "$link")"
+    pfile="$ptitle.m3u" 
+    echo "#EXTM3U" > "$pfile" 
+
+    fullpaths1="$(find /Users/Sahil/Music/Music -type f -regex ".*\.m4a")"
+    fullpaths2="$(find /Users/Sahil/Music/Music -type f -regex ".*\.mp3")"
+    fullpaths="${fullpaths1}\n${fullpaths2}"
+
+    echo playlistItems > logfile
+
+    while IFS="" read -r p || [ -n "$p" ]
+    do
+        libItem="$(basename "$p")"
+        while read songExt
+        do
+            song="${songExt%.*}"
+            #echo "$song .... $p"
+
+            if [[ "$libItem" ==  *"$song"* ]]
+            then
+                #echo "$songExt and $p are a match"
+                echo "$p" >> "$pfile"
+                echo "adding $songExt"
+                #rm "$songExt"
+            fi
+        done <<< "$playlistItems"
+    done <<< "$fullpaths"
+    
+}
+
+help(){
+    echo "A work in progress"
+}
+
+while getopts ":hnpr" option; do
+   case $option in
+        h) # display Help
+            help
+            exit;;
+        \?) # Invalid option
+            echo "Error: Invalid option"
+            exit 1;;
+        n)
+            m4aOptions+=( --parse-metadata "playlist_index:%(track_number)s" );;
+        p)
+            downloadPlaylist
+            exit 0;;
+        r)
+            shouldRm=true;;
+            
+    esac
+done
+
+if [ "$link" == "" ]
+then
+    echo "Error: Must provide link"
+    help
+    exit 2
 fi
 
-for a in *.webp
-do
-    b=${a%.webp}.jpg
-    #echo "expected name: $b"
-        ffmpeg -i "$a" -loglevel error -y -an -q 0 -vf scale="'if(gt(iw,ih),-1,720):if(gt(iw,ih),720,-1)', crop=720:720:exact=1" "tmp_$b"
-    #echo "cropped $a to tmp_$b"
-    mv "tmp_$b" "$b"
-    #echo "moved tmp_$b to $b"
-    progressBar $ctpic $totalpic
-    ctpic=$(($ctpic + 1))
-done
+getPlaylistName
+makePlaylistDir
+downloadAudio
+cropArtwork
+fixDate
+embedArtwork
+cleanup
+if [ "$shouldRm" = true ]; then
+    rmDup
+fi
 
-
-echo -ne "\n"
-rm *.webp
-
-
-#Fix 8 digit yyyymmdd to 4 digit yyyy
-echo "Fixing Date"
-ctdate=1
-totaldate=$(ls | grep ".m4a" | wc -l)
-for a in *.m4a
-do
-    date=$(mediainfo "$a" | grep "Recorded date" | tr -dc '0-9')
-    if [ "$date" == "" ]
-    then
-        #echo "$a has no date"
-        continue
-    fi
-    if [ ${#date} == 4 ]
-    then
-        #echo "$a has correctly formatted date"
-        continue
-    fi
-
-    #echo "Date: $date"
-    cdate=$(mediainfo "$a" | grep "Recorded date" | tr -dc '0-9' | cut -c1-4)
-    #echo "Correct Date: $cdate"
-
-    AtomicParsley "$a" --year "$cdate" --overWrite | grep -q "string"
-    progressBar $ctdate $totaldate
-    ctdate=$(($ctdate + 1))
-done
-progComplete
-echo -ne "\n"
-
-
-#embed the artwork
-echo "Embeding Artwork"
-ctart=1
-totalart=$(ls | grep -e ".jpg" | wc -l)
-for a in *.m4a
-do
-    if [ ! -f "${a%.m4a}.jpg" ] 
-    then
-        #echo "${a%.m4a}.jpg does not exist"
-        continue
-    fi
-    AtomicParsley "$a" --artwork "${a%.m4a}.jpg" --overWrite | grep -q "string"
-    #echo "embedded ${a%.m4a}.jpg into $a"
-    progressBar $ctart $totalart
-    ctart=$(($ctart + 1))
-done
-
-
-echo -ne "\n"
-
-sleep 3
-rm *.jpg
-rmposfile
-
-echo ""
-echo "finished"
 
 
 
