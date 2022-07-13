@@ -18,7 +18,9 @@ progComplete() {
 link="$1"
 
 #EXCLUSIVE TO SAHILS MAC ONLY
-cd "/Users/Sahil/Music/download"
+downloadFolder="/Users/Sahil/Music/download"
+mkdir -p "$downloadFolder"
+cd "$downloadFolder"
 
 echo "Getting information..."
 name=$(yt-dlp --yes-playlist --playlist-items 1 -o "%(playlist_title)s" --get-filename "$link")
@@ -31,6 +33,7 @@ cd "$ptitle"
 
 echo "Downloading Audio"
 yt-dlp -f "bestaudio[ext=m4a]" -ciw -o "%(title)s.%(ext)s" --extract-audio --audio-format m4a --q --yes-playlist --write-thumbnail --add-metadata "$link"
+#add this to put disk order: --parse-metadata "playlist_index:%(track_number)s"
 #progComplete
 echo -ne "\n"
 

@@ -1,0 +1,18 @@
+#!/bin/bash
+link=$1
+
+#Set download location
+downloadFolder="/Users/Sahil/Music/playlists"
+cd "$downloadFolder"
+
+echo "Getting Playlist Name..."
+name=$(yt-dlp --yes-playlist --playlist-items 1 -o "%(playlist_title)s" --get-filename "$link")
+ptitle="${name##*$'\r'}"
+echo "Downloading: $ptitle"
+
+list="$(orig-yt-dlp -f "bestaudio[ext=m4a]" -ciw -o "%(title)s.%(ext)s" --get-filename --skip-download "$link")"
+
+pfile="$ptitle.m3u" 
+echo "#EXTM3U" > "$pfile" 
+echo "$list" >> "$pfile" 
+open "$pfile
