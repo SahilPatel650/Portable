@@ -1,8 +1,8 @@
 #!/bin/bash
 
 dir="$PWD"
-pname="$(basename "$PWD")"
-pfile="$(echo "$PWD" | cut -d'/' -f-4)/playlists/$pname.m3u"
+ptitle="$(basename "$PWD")"
+pfile="$(echo "$PWD" | cut -d'/' -f-4)/playlists/$ptitle.m3u"
 echo "#EXTM3U" > "$pfile"
 
 playlistItems="$(ls)"
