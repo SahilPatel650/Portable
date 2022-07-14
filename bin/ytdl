@@ -1,17 +1,9 @@
 #!/bin/bash
-
 #####UPDATE THIS- Folder must have 'downloads' and 'playlists' subdirectories###### 
 cd ~/Music
 musicFolder="$(pwd)"
 
 #declare functions
-rmposfile() {
-    if [ "$ptitle" != "NA" ]
-    then
-        rm posfile
-    fi
-}
-
 progComplete() {
     if [ "$ptitle" == "NA" ]
     then
@@ -34,13 +26,20 @@ getPlaylistName(){
 
 makePlaylistDir(){
     mkdir -p "$ptitle"
-    rmposfile
+    rm -f posfile
     cd "$ptitle"
 }
 
 
 downloadAudio(){
     echo "Downloading Audio:"
+
+    if [[ "$link" == *"https://music.youtube.com"* ]]; then
+        m4aOptions+=( -f "bestaudio[ext=m4a]" )
+    else
+        m4aOptions+=( -f "bestaudio" )
+    fi
+
     yt-dlp "${m4aOptions[@]}" " $link"
     #add this to put disk order: --parse-metadata "playlist_index:%(track_number)s"
     echo -ne "\n"
@@ -62,20 +61,22 @@ cropArtwork(){
         done
     fi
 
-    for a in *.webp
-    do
-        b=${a%.webp}.jpg
-        #echo "expected name: $b"
-            ffmpeg -i "$a" -loglevel error -y -an -q 0 -vf scale="'if(gt(iw,ih),-1,720):if(gt(iw,ih),720,-1)', crop=720:720:exact=1" "tmp_$b"
-        #echo "cropped $a to tmp_$b"
-        mv "tmp_$b" "$b"
-        #echo "moved tmp_$b to $b"
-        progressBar $ctpic $totalpic
-        ctpic=$(($ctpic + 1))
-    done
+    if [[ "$(ls)" == *".webp"* ]]; then
+        for a in *.webp
+        do
+            b=${a%.webp}.jpg
+            #echo "expected name: $b"
+                ffmpeg -i "$a" -loglevel error -y -an -q 0 -vf scale="'if(gt(iw,ih),-1,720):if(gt(iw,ih),720,-1)', crop=720:720:exact=1" "tmp_$b"
+            #echo "cropped $a to tmp_$b"
+            mv "tmp_$b" "$b"
+            #echo "moved tmp_$b to $b"
+            progressBar $ctpic $totalpic
+            ctpic=$(($ctpic + 1))
+        done
+    fi
 
     echo -ne "\n"
-    rm *.webp
+    rm -f *.webp
 }
 fixDate(){
     #Fix 8 digit yyyymmdd to 4 digit yyyy
@@ -130,8 +131,8 @@ embedArtwork(){
 
 cleanup(){
     sleep 2
-    rm *.jpg
-    rmposfile
+    rm -f *.jpg
+    rm -f posfile
 
     echo ""
     echo "finished"
@@ -205,6 +206,11 @@ downloadPlaylist(){
     
 }
 convertSpotifyToYT(){
+    if [[ "$link" == *"https://open.spotify.com/track/"* ]]; then
+        echo "Only Spotify playlists are supported (Not Songs)"
+        exit 7
+    fi
+
     if [[ "$link" != *"https://open.spotify.com/playlist/"* ]]; then
         return 0
     fi
@@ -236,7 +242,21 @@ compile(){
 }
 
 help(){
-    echo "A work in progress"
+    echo "ytdl is a cli script that allows you to download music from a source. \
+It will square cropped album art and metadata. It can also convert a spotify playlist to YoutubeMusic \
+so that it can be downloaded."
+    echo -ne "\n"
+    echo "Usage: ytdl [-h] [-c] [-n] [-p] [-r] link"
+    echo "Optional arguments: 
+-h          Show this help
+-n          Add track numbering
+-c          *Compile the custom yt-dlp binary
+-p          *Download filenames only and find matches
+-r          *Remove duplicate files and add them to a .m3u playlist
+
+*: These are options that will only work with my specific setup. If anyone stumbles across this repo and is \
+interested, I might be able to change the code to make them work for anyone- just create an issue."
+
 }
 
 verifyMacOS(){
@@ -255,9 +275,9 @@ verifyLinux(){
 ###### Start code ######
 
 link="${@: -1}"
-m4aOptions=( -f "bestaudio[ext=m4a]" -ciw -o "%(title)s.%(ext)s" --extract-audio --audio-format m4a --q --yes-playlist --write-thumbnail --add-metadata )
+m4aOptions=( -ciw -o "%(title)s.%(ext)s" --extract-audio --audio-format m4a --q --yes-playlist --write-thumbnail --add-metadata )
 
-while getopts ":hcnprt" option; do
+while getopts ":hcnpr" option; do
    case $option in
         h) # display Help
             help
@@ -286,6 +306,7 @@ done
 if [ "$link" == "" ]
 then
     echo "Error: Must provide link"
+    echo -ne "\n"
     help
     exit 2
 fi
@@ -301,6 +322,3 @@ cleanup
 if [ "$shouldRm" = true ]; then
     rmDup
 fi
-
-
-
