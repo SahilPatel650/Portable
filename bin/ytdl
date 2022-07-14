@@ -3,7 +3,8 @@ link="${@: -1}"
 m4aOptions=( -f "bestaudio[ext=m4a]" -ciw -o "%(title)s.%(ext)s" --extract-audio --audio-format m4a --q --yes-playlist --write-thumbnail --add-metadata )
 
 #####UPDATE THIS- Folder must have 'downloads' and 'playlists' subdirectories###### 
-musicFolder="/Users/Sahil/Music"
+cd ~/Music
+musicFolder="$(pwd)"
 
 #declare functions
 rmposfile() {
@@ -210,6 +211,13 @@ help(){
     echo "A work in progress"
 }
 
+verifyMacOS(){
+    if [[ "$OSTYPE" != "darwin"* ]]; then
+        echo "Must be using MacOS for this feature"
+        exit 3
+    fi
+}
+
 while getopts ":hnpr" option; do
    case $option in
         h) # display Help
@@ -221,9 +229,11 @@ while getopts ":hnpr" option; do
         n)
             m4aOptions+=( --parse-metadata "playlist_index:%(track_number)s" );;
         p)
+            verifyMacOS
             downloadPlaylist
             exit 0;;
         r)
+            verifyMacOS
             shouldRm=true;;
             
     esac
