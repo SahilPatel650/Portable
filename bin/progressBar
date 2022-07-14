@@ -1,5 +1,8 @@
 #!/bin/bash
-maxwidth=$(($(tput cols) - 19))    # line length (in characters)
+if [[ "$COLUMNS" == "" ]]; then
+        COLUMNS=120
+fi
+maxwidth=$(($(tput -T xterm-256color cols) - 19))    # line length (in characters)
 filled_char="#"
 blank_char="."
 
