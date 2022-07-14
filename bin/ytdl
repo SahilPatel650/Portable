@@ -1,6 +1,4 @@
 #!/bin/bash
-link="${@: -1}"
-m4aOptions=( -f "bestaudio[ext=m4a]" -ciw -o "%(title)s.%(ext)s" --extract-audio --audio-format m4a --q --yes-playlist --write-thumbnail --add-metadata )
 
 #####UPDATE THIS- Folder must have 'downloads' and 'playlists' subdirectories###### 
 cd ~/Music
@@ -206,6 +204,27 @@ downloadPlaylist(){
     done <<< "$fullpaths"
     
 }
+convertSpotifyToYT(){
+    if [[ "$link" != *"https://open.spotify.com/playlist/"* ]]; then
+        return 0
+    fi
+
+    echo "Converting to YT playlist"
+    output=$(ssh -T sahil@10.0.0.65 "cd vscode/spotify-to-ytmusic/; python3 YouTube.py -p "$link"")
+    #echo "$output"
+
+    loglines=$(echo "$output" | tail -n2)
+    complete=$(echo "$loglines" | head -1)
+    link=$(echo "$loglines" | tail -1)
+
+    if [[ "$complete" != *"Success"* ]] || [[ "$link" != *"https://music.youtube.com/playlist"* ]]; then
+        echo "Error, playlist not succesfully converted"
+        exit 5
+    fi
+    echo "Converted playlist: $link"
+    echo -ne "\n"
+}
+
 
 compile(){
     mkdir -p ~/".local/bin"
@@ -233,7 +252,12 @@ verifyLinux(){
     fi
 }
 
-while getopts ":hcnpr" option; do
+###### Start code ######
+
+link="${@: -1}"
+m4aOptions=( -f "bestaudio[ext=m4a]" -ciw -o "%(title)s.%(ext)s" --extract-audio --audio-format m4a --q --yes-playlist --write-thumbnail --add-metadata )
+
+while getopts ":hcnprt" option; do
    case $option in
         h) # display Help
             help
@@ -245,8 +269,7 @@ while getopts ":hcnpr" option; do
             verifyLinux
             compile
             exit 0;;
-        n)
-            m4aOptions+=( --parse-metadata "playlist_index:%(track_number)s" );;
+        
         p)
             verifyMacOS
             downloadPlaylist
@@ -254,6 +277,8 @@ while getopts ":hcnpr" option; do
         r)
             verifyMacOS
             shouldRm=true;;
+        n)
+            m4aOptions+=( --parse-metadata "playlist_index:%(track_number)s" );;
         
     esac
 done
@@ -265,6 +290,7 @@ then
     exit 2
 fi
 
+convertSpotifyToYT
 getPlaylistName
 makePlaylistDir
 downloadAudio
@@ -275,9 +301,6 @@ cleanup
 if [ "$shouldRm" = true ]; then
     rmDup
 fi
-
-
-
 
 
 
