@@ -207,6 +207,15 @@ downloadPlaylist(){
     
 }
 
+compile(){
+    mkdir -p ~/".local/bin"
+    cp ~/"vscode/Portable/bin/ytdl" ~/".local/bin"
+    cd ~/"vscode/yt-dlp"
+    make yt-dlp
+    mv ~/".local/bin/yt-dlp" ~/".local/bin/.yt-dlp.old"
+    mv yt-dlp ~/".local/bin"
+}
+
 help(){
     echo "A work in progress"
 }
@@ -217,8 +226,14 @@ verifyMacOS(){
         exit 3
     fi
 }
+verifyLinux(){
+    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+        echo "Must be using linux for this feature"
+        exit 4
+    fi
+}
 
-while getopts ":hnpr" option; do
+while getopts ":hcnpr" option; do
    case $option in
         h) # display Help
             help
@@ -226,6 +241,10 @@ while getopts ":hnpr" option; do
         \?) # Invalid option
             echo "Error: Invalid option"
             exit 1;;
+        c)
+            verifyLinux
+            compile
+            exit 0;;
         n)
             m4aOptions+=( --parse-metadata "playlist_index:%(track_number)s" );;
         p)
@@ -235,7 +254,7 @@ while getopts ":hnpr" option; do
         r)
             verifyMacOS
             shouldRm=true;;
-            
+        
     esac
 done
 
