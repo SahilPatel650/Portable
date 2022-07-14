@@ -266,7 +266,7 @@ verifyMacOS(){
     fi
 }
 verifyLinux(){
-    if [[ "$OSTYPE" == "linux-gnu"* ]]; then
+    if [[ "$OSTYPE" != "linux-gnu"* ]]; then
         echo "Must be using linux for this feature"
         exit 4
     fi
