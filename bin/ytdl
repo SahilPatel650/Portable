@@ -112,19 +112,20 @@ fixDate(){
 embedArtwork(){
     #embed the artwork
     echo "Embeding Artwork"
-    ctart=1
-    totalart=$(ls | grep -e ".jpg" | wc -l)
+    ctart=0
+    totalart=$(ls | grep -e ".m4a" | wc -l)
     for a in *.m4a
     do
         if [ ! -f "${a%.m4a}.jpg" ] 
         then
             #echo "${a%.m4a}.jpg does not exist"
+            ctart=$(($ctart + 1))
             continue
         fi
         AtomicParsley "$a" --artwork "${a%.m4a}.jpg" --overWrite | grep -q "string"
         #echo "embedded ${a%.m4a}.jpg into $a"
-        progressBar $ctart $totalart
         ctart=$(($ctart + 1))
+        progressBar $ctart $totalart
     done
     echo -ne "\n"
 }
@@ -216,7 +217,12 @@ convertSpotifyToYT(){
     fi
 
     echo "Converting to YT playlist"
-    output=$(ssh -T sahil@10.0.0.65 "cd vscode/spotify-to-ytmusic/; python3 YouTube.py -p "$link"")
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        output=$(ssh -T sahil@10.0.0.65 "cd vscode/spotify-to-ytmusic/; python3 YouTube.py -p "$link"")
+    else
+        cd ~/"vscode/spotify-to-ytmusic/" 
+        output=$(python3 YouTube.py -p "$link")
+    fi
     #echo "$output"
 
     loglines=$(echo "$output" | tail -n2)
