@@ -11,8 +11,8 @@ max=${2:-100}
 
 if (( current > max ))
 then
-    echo >&2 "current value must be smaller than max. value"
-    return 1
+    #echo >&2 "current value must be smaller than max. value"
+    exit
 fi
 percent=$(awk -v "c=$current" -v "m=$max" 'BEGIN{printf("%6.2f", c / m * 100)}')
 
