@@ -40,6 +40,10 @@ downloadAudio(){
         m4aOptions+=( -f "bestaudio" )
     fi
 
+    if [[ "$ptitle" == "Album"* ]]; then
+        m4aOptions+=( --parse-metadata "playlist_index:%(track_number)s" )
+    fi
+
     yt-dlp "${m4aOptions[@]}" " $link"
     #add this to put disk order: --parse-metadata "playlist_index:%(track_number)s"
     echo -ne "\n"
