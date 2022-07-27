@@ -2,7 +2,7 @@
 if [[ "$COLUMNS" == "" ]]; then
         COLUMNS=120
 fi
-maxwidth=$(($(tput -T xterm-256color cols) - 19))    # line length (in characters)
+maxwidth=$(($(tput -T xterm-256color cols) - 19))    # line length (in characters) pls
 filled_char="#"
 blank_char="."
 
