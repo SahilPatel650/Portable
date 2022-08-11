@@ -46,6 +46,7 @@ downloadAudio(){
 
     yt-dlp "${m4aOptions[@]}" " $link"
     #add this to put disk order: --parse-metadata "playlist_index:%(track_number)s"
+    #regex: ^\[download\]\s*[a-zA-Z\s]*\K([0-9.]+\%|\d+ of \d+)
     echo -ne "\n"
 }
 
