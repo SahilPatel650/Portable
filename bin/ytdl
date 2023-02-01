@@ -181,7 +181,7 @@ downloadPlaylist(){
     rm posfile
     cd "${musicFolder}/playlists"
 
-    playlistItems="$(orig-yt-dlp -f "bestaudio[ext=m4a]" -ciw -o "%(title)s.%(ext)s" --get-filename --skip-download "$link")"
+    playlistItems="$(orig-yt-dlp -f "bestaudio[ext=m4a]" -ciw -o "%(title)s" --get-filename --flat-playlist "$link")"
     pfile="$ptitle.m3u" 
     echo "#EXTM3U" > "$pfile" 
 
