@@ -30,10 +30,7 @@ makePlaylistDir(){
     cd "$ptitle"
 }
 
-
-downloadAudio(){
-    echo "Downloading Audio:"
-
+configureOptions(){
     if [[ "$link" == *"https://music.youtube.com"* ]]; then
         m4aOptions+=( -f "bestaudio[ext=m4a]" )
     else
@@ -43,6 +40,23 @@ downloadAudio(){
     if [[ "$ptitle" == "Album"* ]]; then
         m4aOptions+=( --parse-metadata "playlist_index:%(track_number)s" )
     fi
+
+    if [[ "$ptitle" == *"Live"* ]]; then
+        m4aOptions+=( --add-metadata "live:true" )
+    fi
+    if [[ "$ptitle" == *"Remastered"* ]]; then
+        m4aOptions+=( --add-metadata "remastered:true" )
+    fi
+    if [[ "$ptitle" != "NA" ]]; then
+        m4aOptions+=( --progress )
+    fi
+}
+
+
+downloadAudio(){
+    echo "Downloading Audio:"
+
+    
 
     yt-dlp "${m4aOptions[@]}" " $link"
     #add this to put disk order: --parse-metadata "playlist_index:%(track_number)s"
@@ -325,6 +339,7 @@ fi
 convertSpotifyToYT
 getPlaylistName
 makePlaylistDir
+configureOptions
 downloadAudio
 cropArtwork
 fixDate

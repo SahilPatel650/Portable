@@ -6,11 +6,20 @@ maxwidth=$(($(tput -T xterm-256color cols) - 19))    # line length (in character
 filled_char="#"
 blank_char="."
 
-current=0 max=0 i=0
-complete remain
-
-current=${1:-0}
-max=${2:-100}
+# Check if command-line arguments are provided
+if [[ "$#" -eq 2 ]]; then
+    current="$1"
+    max="$2"
+else
+    # Read input values from standard input
+    read -r -a input
+    current="${input[0]}"
+    max="${input[1]}"
+    #if $3 is empty, then make it blank
+fi
+#remove decimal places
+current="${current%.*}"
+max="${max%.*}"
 
 if (( current > max ))
 then
